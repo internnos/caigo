@@ -5,16 +5,18 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"math/big"
+
+	"github.com/dontpanicdao/caigo/types"
 )
 
 /*
-	Verifies the validity of the stark curve signature
-	given the message hash, and public key (x, y) coordinates
-	used to sign the message.
+Verifies the validity of the stark curve signature
+given the message hash, and public key (x, y) coordinates
+used to sign the message.
 
-	(ref: https://github.com/starkware-libs/cairo-lang/blob/master/src/starkware/crypto/starkware/crypto/signature/signature.py)
+(ref: https://github.com/starkware-libs/cairo-lang/blob/master/src/starkware/crypto/starkware/crypto/signature/signature.py)
 */
-func (sc StarkCurve) Verify(msgHash, r, s, pubX, pubY *big.Int) bool {
+func (sc StarkCurve) Verify(msgHash, r, s, pubX, pubY *types.Felt) bool {
 	w := sc.InvModCurveSize(s)
 
 	if s.Cmp(big.NewInt(0)) != 1 || s.Cmp(sc.N) != -1 {
@@ -78,11 +80,11 @@ func (sc StarkCurve) Verify(msgHash, r, s, pubX, pubY *big.Int) bool {
 }
 
 /*
-	Signs the hash value of contents with the provided private key.
-	Secret is generated using a golang implementation of RFC 6979.
-	Implementation does not yet include "extra entropy" or "retry gen".
+Signs the hash value of contents with the provided private key.
+Secret is generated using a golang implementation of RFC 6979.
+Implementation does not yet include "extra entropy" or "retry gen".
 
-	(ref: https://datatracker.ietf.org/doc/html/rfc6979)
+(ref: https://datatracker.ietf.org/doc/html/rfc6979)
 */
 func (sc StarkCurve) Sign(msgHash, privKey *big.Int, seed ...*big.Int) (x, y *big.Int, err error) {
 	if msgHash.Cmp(big.NewInt(0)) != 1 || msgHash.Cmp(sc.Max) != -1 {
@@ -127,18 +129,18 @@ func (sc StarkCurve) Sign(msgHash, privKey *big.Int, seed ...*big.Int) (x, y *bi
 }
 
 /*
-	Hashes the contents of a given array using a golang Pedersen Hash implementation.
+Hashes the contents of a given array using a golang Pedersen Hash implementation.
 
-	(ref: https://github.com/seanjameshan/starknet.js/blob/main/src/utils/ellipticCurve.ts)
+(ref: https://github.com/seanjameshan/starknet.js/blob/main/src/utils/ellipticCurve.ts)
 */
-func (sc StarkCurve) HashElements(elems []*big.Int) (hash *big.Int, err error) {
+func (sc StarkCurve) HashElements(elems []*types.Felt) (hash *types.Felt, err error) {
 	if len(elems) == 0 {
-		elems = append(elems, big.NewInt(0))
+		elems = append(elems, types.StrToFelt("0"))
 	}
 
-	hash = big.NewInt(0)
+	hash = types.BigToFelt(big.NewInt(0))
 	for _, h := range elems {
-		hash, err = sc.PedersenHash([]*big.Int{hash, h})
+		hash, err = sc.PedersenHash([]*types.Felt{hash, h})
 		if err != nil {
 			return hash, err
 		}
@@ -147,20 +149,22 @@ func (sc StarkCurve) HashElements(elems []*big.Int) (hash *big.Int, err error) {
 }
 
 /*
-	Provides the pedersen hash of given array of big integers.
-	NOTE: This function assumes the curve has been initialized with contant points
+Provides the pedersen hash of given array of big integers.
+NOTE: This function assumes the curve has been initialized with contant points
 
-	(ref: https://github.com/seanjameshan/starknet.js/blob/main/src/utils/ellipticCurve.ts)
+(ref: https://github.com/seanjameshan/starknet.js/blob/main/src/utils/ellipticCurve.ts)
 */
-func (sc StarkCurve) PedersenHash(elems []*big.Int) (hash *big.Int, err error) {
+func (sc StarkCurve) PedersenHash(elems []*types.Felt) (hash *types.Felt, err error) {
 	if len(sc.ConstantPoints) == 0 {
 		return hash, fmt.Errorf("must initiate precomputed constant points")
 	}
 
-	ptx := new(big.Int).Set(sc.Gx)
-	pty := new(big.Int).Set(sc.Gy)
+	// types.BigToFelt()
+	// tempptx := new(big.Int).Set(sc.Gx)
+	ptx := types.BigToFelt(new(big.Int).Set(sc.Gx))
+	pty := types.BigToFelt(new(big.Int).Set(sc.Gy))
 	for i, elem := range elems {
-		x := new(big.Int).Set(elem)
+		x := elem
 
 		if x.Cmp(big.NewInt(0)) != -1 && x.Cmp(sc.P) != -1 {
 			return ptx, fmt.Errorf("invalid x: %v", x)
@@ -168,15 +172,16 @@ func (sc StarkCurve) PedersenHash(elems []*big.Int) (hash *big.Int, err error) {
 
 		for j := 0; j < 252; j++ {
 			idx := 2 + (i * 252) + j
-			xin := new(big.Int).Set(sc.ConstantPoints[idx][0])
-			yin := new(big.Int).Set(sc.ConstantPoints[idx][1])
-			if xin.Cmp(ptx) == 0 {
+			xin := types.BigToFelt(new(big.Int).Set(sc.ConstantPoints[idx][0]))
+			yin := types.BigToFelt(new(big.Int).Set(sc.ConstantPoints[idx][1]))
+			if xin.Cmp(ptx.Int) == 0 {
 				return hash, fmt.Errorf("constant point duplication: %v %v", ptx, xin)
 			}
 			if x.Bit(0) == 1 {
 				ptx, pty = sc.Add(ptx, pty, xin, yin)
 			}
-			x = x.Rsh(x, 1)
+			xx := x.Int.Rsh(x.Int, 1)
+			x = types.BigToFelt(xx)
 		}
 	}
 

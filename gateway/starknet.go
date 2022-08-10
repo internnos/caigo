@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/dontpanicdao/caigo"
 	"github.com/dontpanicdao/caigo/types"
 	"github.com/google/go-querystring/query"
 )
@@ -48,9 +47,9 @@ func (sg *Gateway) Call(ctx context.Context, call types.FunctionCall, blockHashO
 	gc := GatewayFunctionCall{
 		FunctionCall: call,
 	}
-	gc.EntryPointSelector = caigo.BigToHex(caigo.GetSelectorFromName(gc.EntryPointSelector))
+	// gc.EntryPointSelector = caigo.BigToHex(caigo.GetSelectorFromName(gc.EntryPointSelector))
 	if len(gc.Calldata) == 0 {
-		gc.Calldata = []string{}
+		gc.Calldata = []*types.Felt{}
 	}
 
 	if len(gc.Signature) == 0 {
@@ -79,21 +78,21 @@ func (sg *Gateway) Invoke(ctx context.Context, invoke types.FunctionInvoke) (*ty
 	tx := types.Transaction{
 		Type:               INVOKE,
 		ContractAddress:    invoke.ContractAddress,
-		EntryPointSelector: caigo.BigToHex(caigo.GetSelectorFromName(invoke.EntryPointSelector)),
+		EntryPointSelector: invoke.EntryPointSelector,
 		MaxFee:             invoke.MaxFee,
 	}
 
 	if len(invoke.Calldata) == 0 {
-		tx.Calldata = []string{}
+		tx.Calldata = []*types.Felt{}
 	} else {
 		tx.Calldata = invoke.Calldata
 	}
 
 	if len(invoke.Signature) == 0 {
-		tx.Signature = []string{}
+		tx.Signature = []*types.Felt{}
 	} else {
 		// stop-gap before full types.Felt cutover
-		tx.Signature = []string{invoke.Signature[0].Int.String(), invoke.Signature[1].Int.String()}
+		tx.Signature = []*types.Felt{invoke.Signature[0], invoke.Signature[1]}
 	}
 
 	req, err := sg.newRequest(ctx, http.MethodPost, "/add_transaction", tx)

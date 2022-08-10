@@ -98,22 +98,25 @@ func init() {
 // Assumes affine form (x, y) is spread (x1 *big.Int, y1 *big.Int)
 //
 // (ref: https://github.com/starkware-libs/cairo-lang/blob/master/src/starkware/crypto/starkware/crypto/signature/math_utils.py)
-func (sc StarkCurve) Add(x1, y1, x2, y2 *big.Int) (x, y *big.Int) {
-	yDelta := new(big.Int).Sub(y1, y2)
-	xDelta := new(big.Int).Sub(x1, x2)
+func (sc StarkCurve) Add(x1, y1, x2, y2 *types.Felt) (x, y *types.Felt) {
+
+	yDelta := new(big.Int).Sub(y1.Int, y2.Int)
+	xDelta := new(big.Int).Sub(x1.Int, x2.Int)
 
 	m := DivMod(yDelta, xDelta, sc.P)
 
 	xm := new(big.Int).Mul(m, m)
 
-	x = new(big.Int).Sub(xm, x1)
-	x = x.Sub(x, x2)
-	x = x.Mod(x, sc.P)
+	w := new(big.Int).Sub(xm, x1.Int)
+	w = w.Sub(w, x2.Int)
+	w = w.Mod(w, sc.P)
+	x = types.BigToFelt(w)
 
-	y = new(big.Int).Sub(x1, x)
-	y = y.Mul(m, y)
-	y = y.Sub(y, y1)
-	y = y.Mod(y, sc.P)
+	v := new(big.Int).Sub(x1.Int, w)
+	v = v.Mul(m, v)
+	v = v.Sub(v, y1.Int)
+	v = v.Mod(v, sc.P)
+	y = types.BigToFelt(v)
 
 	return x, y
 }
@@ -291,7 +294,7 @@ func DivMod(n, m, p *big.Int) *big.Int {
 func (sc StarkCurve) HashTx(addr *big.Int, tx types.Transaction) (hash *big.Int, err error) {
 	calldataArray := []*big.Int{big.NewInt(int64(len(tx.Calldata)))}
 	for _, cd := range tx.Calldata {
-		calldataArray = append(calldataArray, SNValToBN(cd))
+		calldataArray = append(calldataArray, SNValToBN(cd.String()))
 	}
 
 	cdHash, err := sc.HashElements(calldataArray)
@@ -301,7 +304,7 @@ func (sc StarkCurve) HashTx(addr *big.Int, tx types.Transaction) (hash *big.Int,
 
 	txHashData := []*big.Int{
 		SNValToBN(tx.ContractAddress.String()),
-		GetSelectorFromName(tx.EntryPointSelector),
+		GetSelectorFromName(tx.EntryPointSelector.String()),
 		cdHash,
 	}
 
@@ -314,7 +317,7 @@ func (sc StarkCurve) HashTx(addr *big.Int, tx types.Transaction) (hash *big.Int,
 func (sc StarkCurve) HashMsg(addr *big.Int, tx types.Transaction) (hash *big.Int, err error) {
 	calldataArray := []*big.Int{big.NewInt(int64(len(tx.Calldata)))}
 	for _, cd := range tx.Calldata {
-		calldataArray = append(calldataArray, HexToBN(cd))
+		calldataArray = append(calldataArray, HexToBN(cd.String()))
 	}
 
 	cdHash, err := sc.HashElements(calldataArray)
@@ -325,7 +328,7 @@ func (sc StarkCurve) HashMsg(addr *big.Int, tx types.Transaction) (hash *big.Int
 	txHashData := []*big.Int{
 		addr,
 		SNValToBN(tx.ContractAddress.String()),
-		GetSelectorFromName(tx.EntryPointSelector),
+		GetSelectorFromName(tx.EntryPointSelector.String()),
 		cdHash,
 		SNValToBN(tx.Nonce.String()),
 	}

@@ -71,8 +71,8 @@ func setupDevnet() {
 			Transactions: []types.Transaction{
 				{
 					ContractAddress:    types.StrToFelt("10000"),
-					EntryPointSelector: "update_single_store",
-					Calldata:           []string{"3"},
+					EntryPointSelector: types.StrToFelt("update_single_store"),
+					Calldata:           []*types.Felt{types.StrToFelt("3")},
 				},
 			},
 		},
@@ -83,13 +83,13 @@ func setupDevnet() {
 			Transactions: []types.Transaction{
 				{
 					ContractAddress:    types.StrToFelt("20000"),
-					EntryPointSelector: "update_multi_store",
-					Calldata:           []string{"4", "7"},
+					EntryPointSelector: types.StrToFelt("update_multi_store"),
+					Calldata:           []*types.Felt{types.StrToFelt("4"), types.StrToFelt("7")},
 				},
 				{
 					ContractAddress:    types.StrToFelt("20000"),
-					EntryPointSelector: "update_struct_store",
-					Calldata:           []string{"435921360636", "15000000000000000000", "0"},
+					EntryPointSelector: types.StrToFelt("update_struct_store"),
+					Calldata:           []*types.Felt{types.StrToFelt("435921360636"), types.StrToFelt("435921360636"), types.StrToFelt("15000000000000000000"), types.StrToFelt("0")},
 				},
 			},
 		},

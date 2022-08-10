@@ -119,7 +119,7 @@ func TestCallGoerli(t *testing.T) {
 	for _, testAccount := range testnetAccounts {
 		call := types.FunctionCall{
 			ContractAddress:    testAccount.Address,
-			EntryPointSelector: "get_signer",
+			EntryPointSelector: types.StrToFelt("get_signer"),
 		}
 
 		resp, err := gw.Call(context.Background(), call, "")
@@ -171,8 +171,8 @@ func TestE2EDevnet(t *testing.T) {
 			tx := []types.Transaction{
 				{
 					ContractAddress:    txDetails.Transaction.ContractAddress,
-					EntryPointSelector: "set_rand",
-					Calldata:           []string{rand},
+					EntryPointSelector: types.StrToFelt("set_rand"),
+					Calldata:           []*types.Felt{types.StrToFelt(rand)},
 				},
 			}
 
@@ -200,7 +200,7 @@ func TestE2EDevnet(t *testing.T) {
 
 			call := types.FunctionCall{
 				ContractAddress:    txDetails.Transaction.ContractAddress,
-				EntryPointSelector: "get_rand",
+				EntryPointSelector: types.StrToFelt("get_rand"),
 			}
 			callResp, err := gw.Call(context.Background(), call, "")
 			if err != nil {
