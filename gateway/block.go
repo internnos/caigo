@@ -64,6 +64,37 @@ func (sg *Gateway) Block(ctx context.Context, opts *BlockOptions) (*Block, error
 	return &resp, sg.do(req, &resp)
 }
 
+func (sg *Gateway) Block_UPDATEDVERSION(ctx context.Context, opts *BlockOptions) (*Block, error) {
+	req, err := sg.newRequest(ctx, http.MethodGet, "/get_block", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Example of an implementation change to map the real API
+	type tempBlockOptions struct {
+		BlockNumber uint64
+		BlockHash   string
+	}
+
+	out := tempBlockOptions{}
+	if opts != nil {
+		out.BlockNumber = opts.BlockNumber
+		if opts.BlockHash != nil && opts.BlockHash.Int != nil {
+			out.BlockHash = fmt.Sprintf("0x%s", opts.BlockHash.Int.Text(16))
+		}
+
+		vs, err := query.Values(opts)
+		if err != nil {
+			return nil, err
+		}
+		appendQueryValues(req, vs)
+		fmt.Println(vs.Get("BlockHash"))
+	}
+
+	var resp Block
+	return &resp, sg.do(req, &resp)
+}
+
 func (sg *Gateway) BlockHashByID(ctx context.Context, id uint64) (block string, err error) {
 	req, err := sg.newRequest(ctx, http.MethodGet, "/get_block_hash_by_id", nil)
 	if err != nil {
