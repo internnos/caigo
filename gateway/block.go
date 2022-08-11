@@ -72,8 +72,8 @@ func (sg *Gateway) Block_UPDATEDVERSION(ctx context.Context, opts *BlockOptions)
 
 	// Example of an implementation change to map the real API
 	type tempBlockOptions struct {
-		BlockNumber uint64
-		BlockHash   string
+		BlockNumber uint64 `url:"blockNumber,omitempty"`
+		BlockHash   string `url:"blockHash,omitempty"`
 	}
 
 	out := tempBlockOptions{}
@@ -83,12 +83,11 @@ func (sg *Gateway) Block_UPDATEDVERSION(ctx context.Context, opts *BlockOptions)
 			out.BlockHash = fmt.Sprintf("0x%s", opts.BlockHash.Int.Text(16))
 		}
 
-		vs, err := query.Values(opts)
+		vs, err := query.Values(out)
 		if err != nil {
 			return nil, err
 		}
 		appendQueryValues(req, vs)
-		fmt.Println(vs.Get("BlockHash"))
 	}
 
 	var resp Block

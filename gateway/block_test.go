@@ -32,8 +32,8 @@ func TestValueWithFeltWithPrepare(t *testing.T) {
 	}
 
 	type tempBlockOptions struct {
-		BlockNumber uint64
-		BlockHash   string
+		BlockNumber uint64 `url:"blockNumber,omitempty"`
+		BlockHash   string `url:"blockHash,omitempty"`
 	}
 	out := tempBlockOptions{
 		BlockNumber: v.BlockNumber,
