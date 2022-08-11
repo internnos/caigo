@@ -2,8 +2,27 @@ package gateway
 
 import (
 	"context"
+	"math/big"
 	"testing"
+
+	"github.com/dontpanicdao/caigo/types"
+	"github.com/google/go-querystring/query"
 )
+
+func TestValueWithFelt(t *testing.T) {
+	v := &BlockOptions{
+		BlockNumber: 0,
+		BlockHash:   &types.Felt{Int: big.NewInt(1)},
+	}
+	output, err := query.Values(v)
+	if err != nil {
+		t.Error(err)
+	}
+	x := output.Get("blockhash")
+	if x != "1" {
+		t.Errorf("Blockhash should be 1 (or 0x1), instead: \"%s\"", x)
+	}
+}
 
 func Test_BlockIDByHash(t *testing.T) {
 	gw := NewClient()
